@@ -24,7 +24,7 @@ type oval_definitions struct {
 	Definitions    []definition    `xml:"definitions>definition"`
 	RPMInfoTests   []rpmInfoTest   `xml:"tests>rpminfo_test"`
 	RPMInfoObjects []rpmInfoObject `xml:"objects>rpminfo_object"`
-	RPMInfoState   []rpmInfoState  `xml:"states>rpminfo_state"`
+	RPMInfoStates  []rpmInfoState  `xml:"states>rpminfo_state"`
 	/* Other elements defined in the specification we are not using here:
 	variables
 	ds:Signature
@@ -47,8 +47,8 @@ func (o *oval_definitions) String() string {
 	for i := 0; i < len(o.RPMInfoTests); i++ {
 		result += "Tests: " + o.RPMInfoTests[i].String() + "\n"
 	}
-	for i := 0; i < len(o.RPMInfoState); i++ {
-		result += "States: " + o.RPMInfoState[i].String() + "\n"
+	for i := 0; i < len(o.RPMInfoStates); i++ {
+		result += "States: " + o.RPMInfoStates[i].String() + "\n"
 	}
 	for i := 0; i < len(o.RPMInfoObjects); i++ {
 		result += "Objects: " + o.RPMInfoObjects[i].String() + "\n"
@@ -274,6 +274,44 @@ func getArgs() (string, error) {
 	return os.Args[1], nil
 }
 
+func (o *oval_definitions) objectName(objectId string) string {
+	for i := 0; i < len(o.RPMInfoObjects); i++ {
+		if o.RPMInfoObjects[i].Id == objectId {
+			return o.RPMInfoObjects[i].Name
+		}
+	}
+	return ""
+}
+
+func (o *oval_definitions) stateVersion(stateId string) string {
+	for i := 0; i < len(o.RPMInfoStates); i++ {
+		if o.RPMInfoStates[i].Id == stateId {
+			if o.RPMInfoStates[i].Evr.Operation == "less than" {
+				return o.RPMInfoStates[i].Evr.Value
+			}
+		}
+	}
+	return ""
+}
+
+type packageInfo struct {
+	Name    string
+	Version string
+}
+
+func (o *oval_definitions) packages() (packages []packageInfo) {
+	packages = make([]packageInfo, len(o.RPMInfoTests))
+	for i := 0; i < len(o.RPMInfoTests); i++ {
+		packages[i].Name = o.objectName(o.RPMInfoTests[i].ObjectRef.Id)
+		packages[i].Version = o.stateVersion(o.RPMInfoTests[i].StateRef.Id)
+	}
+	return
+}
+
+func (p *packageInfo) String() string {
+	return "Name: " + p.Name + "Fixed Version: " + p.Version
+}
+
 func main() {
 	file, err := getArgs()
 	if err != nil {
@@ -296,5 +334,17 @@ func main() {
 		fmt.Println("Error unmarshalling", err)
 		return
 	}
-	fmt.Println(&v)
+	p := v.packages()
+	skipped := ""
+	for i := 0; i < len(p); i++ {
+		if p[i].Name == "" {
+			continue
+		}
+		if p[i].Version == "" {
+			skipped = skipped + ", " + p[i].Name
+			continue
+		}
+		fmt.Println(p[i])
+	}
+	fmt.Println("Skipped ", skipped)
 }
