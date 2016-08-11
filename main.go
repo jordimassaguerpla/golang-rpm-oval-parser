@@ -254,7 +254,7 @@ type criterion struct {
 
 func usage_and_exit(err error) {
 	fmt.Println(err.Error())
-	fmt.Println("usage: %s filename.xml", os.Args[0])
+	fmt.Printf("usage: %s filename.xml\n", os.Args[0])
 	fmt.Println(" where filename.xml is oval xml file to parse")
 	os.Exit(-1)
 }
