@@ -13,6 +13,9 @@ for an RPM based distribution.
  OVAL files for RedHat
  https://www.redhat.com/security/data/oval/
 
+ OVAL files for Oracle
+ https://linux.oracle.com/oval/
+
 Usage:
 
 build it with: go build
@@ -20,7 +23,3 @@ build it with: go build
 you can run with ./golang-rpm-oval-parser FILE.xml
 
 you can use files in test directory for testing the parser
-
-
-
-
